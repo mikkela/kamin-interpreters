@@ -4,19 +4,19 @@ package apl
 object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEvaluator(e)):
   private def shape(v: MatrixValue) = v.dimensions
 
-  putBinaryIntMatrixOp("+")(_ + _)
-  putBinaryIntMatrixOp("-")(_ - _)
-  putBinaryIntMatrixOp("/")(
+  putDuadicOperation("+")(_ + _)
+  putDuadicOperation("-")(_ - _)
+  putDuadicOperation("/")(
     op = _ / _,
     validate = (_, b) => if (b == 0) Left("Division with zero") else Right(()),
     shapeError = "Different shapes"
   )
-  putBinaryIntMatrixOp("*")(_ * _)
-  putBinaryIntMatrixOp("=")((x, y) => if x == y then 1 else 0)
-  putBinaryIntMatrixOp("<")((x, y) => if x < y then 1 else 0)
-  putBinaryIntMatrixOp(">")((x, y) => if x > y then 1 else 0)
-  putBinaryIntMatrixOp("max")(math.max(_, _))
-  putBinaryIntMatrixOp("min")(math.min(_, _))
+  putDuadicOperation("*")(_ * _)
+  putDuadicOperation("=")((x, y) => if x == y then 1 else 0)
+  putDuadicOperation("<")((x, y) => if x < y then 1 else 0)
+  putDuadicOperation(">")((x, y) => if x > y then 1 else 0)
+  putDuadicOperation("max")(math.max(_, _))
+  putDuadicOperation("min")(math.min(_, _))
 
   table.put("car", FunctionDefinitionEntry(1,
     (env, arguments) =>
@@ -78,7 +78,7 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
     Right(arguments.head)))
 
   // Generic helper with optional per-pair validation and customizable shape error
-  private def putBinaryIntMatrixOp(
+  private def putDuadicOperation(
                                     symbol: String
                                   )(
                                     op: (Int, Int) => Int,
