@@ -4,19 +4,33 @@ package apl
 object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEvaluator(e)):
   private def shape(v: MatrixValue) = v.dimensions
 
-  putDuadicOperation("+")(_ + _)
-  putDuadicOperation("-")(_ - _)
-  putDuadicOperation("/")(
+  table.put("+", createBinaryOperation(_ + _))
+  table.put("-", createBinaryOperation(_ - _))
+  table.put("/", createBinaryOperation(
     op = _ / _,
     validate = (_, b) => if (b == 0) Left("Division with zero") else Right(()),
     shapeError = "Different shapes"
-  )
-  putDuadicOperation("*")(_ * _)
-  putDuadicOperation("=")((x, y) => if x == y then 1 else 0)
-  putDuadicOperation("<")((x, y) => if x < y then 1 else 0)
-  putDuadicOperation(">")((x, y) => if x > y then 1 else 0)
-  putDuadicOperation("max")(math.max(_, _))
-  putDuadicOperation("min")(math.min(_, _))
+  ))
+  table.put("*", createBinaryOperation(_ * _))
+  table.put("=", createBinaryOperation((x, y) => if x == y then 1 else 0))
+  table.put("<", createBinaryOperation((x, y) => if x < y then 1 else 0))
+  table.put(">", createBinaryOperation((x, y) => if x > y then 1 else 0))
+  table.put("max", createBinaryOperation(math.max(_, _)))
+  table.put("min", createBinaryOperation(math.min(_, _)))
+  table.put("and", createBinaryOperation((x, y) => if x != 0 && y != 0 then 1 else 0))
+  table.put("or", createBinaryOperation((x, y) => if x != 0 || y != 0 then 1 else 0))
+
+  table.put("+/", createAccumulatingOperation(_ + _))
+  table.put("-/", createAccumulatingOperation(_ - _))
+  table.put("*/", createAccumulatingOperation(_ * _))
+  table.put("//", createAccumulatingOperation(
+    op = _ / _,
+    validate = s => if (s.length > 0 && s.tail.contains(0)) Left("Division with zero") else Right(())
+  ))
+  table.put("and/", createAccumulatingOperation((x, y) => if x != 0 && y != 0 then 1 else 0))
+  table.put("or/", createAccumulatingOperation((x, y) => if x != 0 || y != 0 then 1 else 0))
+  table.put("max/", createAccumulatingOperation((x, y) => if x > y then x else y))
+
 
   table.put("car", FunctionDefinitionEntry(1,
     (env, arguments) =>
@@ -77,54 +91,73 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
     print(arguments.head.toString)
     Right(arguments.head)))
 
+  private def simplify(v: Value): Value =
+    v match
+      case MatrixValue(value, dimensions) if dimensions.cols == 1 && dimensions.rows == 1 => IntegerValue(value.head)
+      case _ => v
+
+  private def createAccumulatingOperation(
+                                           op: (Int, Int) => Int,
+                                           validate: Seq[Int] => Either[String, Unit] = _ => Right(())
+                                         ) : FunctionDefinitionEntry =
+    FunctionDefinitionEntry(1, (env, arguments) => {
+      val v = arguments.head
+
+      v match
+        case IntegerValue(value) => Right(IntegerValue(value))
+        case MatrixValue(value, dimensions) =>
+          validate(value).map(_ =>
+            simplify(
+              MatrixValue(
+                value.sliding(dimensions.cols, dimensions.cols).map(_.reduce(op)).toSeq, Dimensions(dimensions.rows, 1)
+              )
+            )
+          )
+    })
   // Generic helper with optional per-pair validation and customizable shape error
-  private def putDuadicOperation(
-                                    symbol: String
-                                  )(
+  private def createBinaryOperation(
                                     op: (Int, Int) => Int,
                                     validate: (Int, Int) => Either[String, Unit] = (_, _) => Right(()),
                                     shapeError: String = "Shape mismatch"
-                                  ): Unit =
-    table.put(symbol,
-      FunctionDefinitionEntry(2, (env, arguments) => {
-        val v1 = arguments.head
-        val v2 = arguments(1)
+                                  ): FunctionDefinitionEntry =
+    FunctionDefinitionEntry(2, (env, arguments) => {
+      val v1 = arguments.head
+      val v2 = arguments(1)
 
-        (v1, v2) match
-          // scalar ∘ scalar
-          case (IntegerValue(a), IntegerValue(b)) =>
-            validate(a, b).map(_ => IntegerValue(op(a, b)))
+      (v1, v2) match
+        // scalar ∘ scalar
+        case (IntegerValue(a), IntegerValue(b)) =>
+          validate(a, b).map(_ => IntegerValue(op(a, b)))
 
-          // matrix ∘ scalar
-          case (MatrixValue(as, d1), IntegerValue(b)) =>
-            // ensure all pairs (x,b) validate
-            as.foldLeft[Either[String, Unit]](Right(())) { (acc, x) =>
-              acc.flatMap(_ => validate(x, b))
-            }.map(_ => MatrixValue(as.map(x => op(x, b)), d1))
+        // matrix ∘ scalar
+        case (MatrixValue(as, d1), IntegerValue(b)) =>
+          // ensure all pairs (x,b) validate
+          as.foldLeft[Either[String, Unit]](Right(())) { (acc, x) =>
+            acc.flatMap(_ => validate(x, b))
+          }.map(_ => MatrixValue(as.map(x => op(x, b)), d1))
 
-          // scalar ∘ matrix
-          case (IntegerValue(a), MatrixValue(bs, d2)) =>
-            bs.foldLeft[Either[String, Unit]](Right(())) { (acc, y) =>
-              acc.flatMap(_ => validate(a, y))
-            }.map(_ => MatrixValue(bs.map(y => op(a, y)), d2))
+        // scalar ∘ matrix
+        case (IntegerValue(a), MatrixValue(bs, d2)) =>
+          bs.foldLeft[Either[String, Unit]](Right(())) { (acc, y) =>
+            acc.flatMap(_ => validate(a, y))
+          }.map(_ => MatrixValue(bs.map(y => op(a, y)), d2))
 
-          // matrix ∘ matrix (element-wise)
-          case (m1 @ MatrixValue(as, d1), m2 @ MatrixValue(bs, d2)) =>
-            if (shape(m1) != shape(m2)) Left(shapeError)
-            else
-              // validate pairwise first
-              val validated = as.zip(bs).foldLeft[Either[String, Unit]](Right(())) {
-                case (acc, (x, y)) => acc.flatMap(_ => validate(x, y))
-              }
-              validated.map(_ =>
-                MatrixValue(as.zip(bs).map { case (x, y) => op(x, y) }, d1)
-              )
+        // matrix ∘ matrix (element-wise)
+        case (m1 @ MatrixValue(as, d1), m2 @ MatrixValue(bs, d2)) =>
+          if (shape(m1) != shape(m2)) Left(shapeError)
+          else
+            // validate pairwise first
+            val validated = as.zip(bs).foldLeft[Either[String, Unit]](Right(())) {
+              case (acc, (x, y)) => acc.flatMap(_ => validate(x, y))
+            }
+            validated.map(_ =>
+              MatrixValue(as.zip(bs).map { case (x, y) => op(x, y) }, d1)
+            )
 
 
-          case _ =>
-            Left("Invalid types")
+        case _ =>
+          Left("Invalid types")
       })
-    )
 
 class APLEvaluator(val currentEnvironment: Environment[Value])
   extends Evaluator[Value]:

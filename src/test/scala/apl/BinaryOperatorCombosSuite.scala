@@ -5,12 +5,11 @@ import munit.FunSuite
 import com.mikadocs.kamin.apl.functionDefinitionTable
 import com.mikadocs.kamin.{Value, IntegerValue, MatrixValue} // and Dimensions if you need it elsewhere
 
-final class DuadicOperatorCombosSuite extends FunSuite {
+final class BinaryOperatorCombosSuite extends FunSuite {
 
   // -- helpers ---------------------------------------------------------------
 
   /** Fetch the function entry for a symbol.
-   * If your table doesn't have `get`, tweak this to use whatever it exposes.
    */
   private def entry(symbol: String) =
     functionDefinitionTable.lookupFunctionDefinition(symbol)
@@ -239,5 +238,51 @@ final class DuadicOperatorCombosSuite extends FunSuite {
 
   test("min matrix/matrix (shape mismatch -> Shape mismatch)") {
     assertEquals(run2("min", v(1, 2), v(1, 2, 3)), Left("Shape mismatch"))
+  }
+
+  // -- and ---------------------------------------------------------------------
+
+  test("and scalar/scalar") {
+    assertEquals(run2("and", IntegerValue(6), IntegerValue(7)), Right(IntegerValue(1)))
+    assertEquals(run2("and", IntegerValue(0), IntegerValue(7)), Right(IntegerValue(0)))
+  }
+
+  test("and matrix/scalar") {
+    assertEquals(run2("and", v(1, 0, 3), IntegerValue(2)), Right(v(1, 0, 1)))
+  }
+
+  test("and scalar/matrix") {
+    assertEquals(run2("and", IntegerValue(1), v(0, 1, 2)), Right(v(0, 1, 1)))
+  }
+
+  test("and matrix/matrix (same shape)") {
+    assertEquals(run2("and", v(1, 2, 0), v(2, 0, 3)), Right(v(1, 0, 0)))
+  }
+
+  test("and matrix/matrix (shape mismatch -> Shape mismatch)") {
+    assertEquals(run2("min", v(1, 2), v(1, 2, 3)), Left("Shape mismatch"))
+  }
+
+  // -- or ---------------------------------------------------------------------
+
+  test("or scalar/scalar") {
+    assertEquals(run2("or", IntegerValue(6), IntegerValue(7)), Right(IntegerValue(1)))
+    assertEquals(run2("or", IntegerValue(0), IntegerValue(0)), Right(IntegerValue(0)))
+  }
+
+  test("or matrix/scalar") {
+    assertEquals(run2("or", v(1, 0, 3), IntegerValue(2)), Right(v(1, 1, 1)))
+  }
+
+  test("or scalar/matrix") {
+    assertEquals(run2("or", IntegerValue(0), v(0, 1, 2)), Right(v(0, 1, 1)))
+  }
+
+  test("or matrix/matrix (same shape)") {
+    assertEquals(run2("or", v(1, 0, 0), v(2, 0, 3)), Right(v(1, 0, 1)))
+  }
+
+  test("or matrix/matrix (shape mismatch -> Shape mismatch)") {
+    assertEquals(run2("or", v(1, 2), v(1, 2, 3)), Left("Shape mismatch"))
   }
 }
