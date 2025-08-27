@@ -37,10 +37,10 @@ final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
 
   // ---- registration presence & arity --------------------------------------
 
-  test("registers +, -, /, *, =, <, >, max, min, +/, -/, */, //, compress, shape, ravel, restruct") {
+  test("registers +, -, /, *, =, <, >, max, min, +/, -/, */, //, compress, shape, ravel, restruct, cat") {
     List(
       "+", "-", "/", "*", "=", "<", ">", "max", "min", "or", "and", "+/", "-/", "*/",
-      "//", "max/", "and/", "or/", "compress", "shape", "ravel", "restruct").foreach { s =>
+      "//", "max/", "and/", "or/", "compress", "shape", "ravel", "restruct", "cat").foreach { s =>
       assert(functionDefinitionTable.lookupFunctionDefinition(s).nonEmpty, clues(s))
     }
   }
@@ -68,6 +68,7 @@ final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
     assertEquals(entry("shape").numberOfArguments, 1)
     assertEquals(entry("ravel").numberOfArguments, 1)
     assertEquals(entry("restruct").numberOfArguments, 2)
+    assertEquals(entry("cat").numberOfArguments, 2)
   }
 
   // ---- light smoke tests to verify wiring (not re-testing mechanics) ------
@@ -178,5 +179,10 @@ final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
   test("restruct produces an integer result (smoke)") {
     assertEquals(run2("restruct", MatrixValue.vector(Seq.empty), IntegerValue(2)),
       Right(IntegerValue(2)))
+  }
+
+  test("cat produces a vector result (smoke)") {
+    assertEquals(run2("cat", IntegerValue(1), IntegerValue(2)),
+      Right(MatrixValue.vector(Seq(1, 2))))
   }
 }

@@ -52,9 +52,7 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
   table.put("ravel", FunctionDefinitionEntry(1,
     (env, arguments) =>
       val a = arguments.head
-      a match
-        case IntegerValue(v) => Right(MatrixValue.toMatrix(v))
-        case m: MatrixValue => Right(m.ravel())
+      Right(ravel(a))
   ))
 
   table.put("restruct", FunctionDefinitionEntry(2,
@@ -70,6 +68,15 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
         case _ => Left("Invalid 1st argument. Must be a shape vector")
 
   ))
+
+  table.put("cat", FunctionDefinitionEntry(2,
+    (env, arguments) =>
+      val a = ravel(arguments.head)
+      val b = ravel(arguments(1))
+      
+      Right(MatrixValue.vector(a.value ++ b.value))
+  ))
+  
   table.put("cdr", FunctionDefinitionEntry(1,
     (env, arguments) =>
       arguments.head match
@@ -125,6 +132,11 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
     v match
       case MatrixValue(value, dimensions) if dimensions.cols == 1 && dimensions.rows == 1 => IntegerValue(value.head)
       case _ => v
+
+  private def ravel(value: Value): MatrixValue =
+    value match
+      case IntegerValue(v) => MatrixValue.toMatrix(v)
+      case m: MatrixValue => m.ravel()
 
   private def createAccumulatingOperation(
                                            op: (Int, Int) => Int,
