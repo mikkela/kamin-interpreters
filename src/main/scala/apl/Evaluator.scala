@@ -30,8 +30,7 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
   table.put("and/", createAccumulatingOperation((x, y) => if x != 0 && y != 0 then 1 else 0))
   table.put("or/", createAccumulatingOperation((x, y) => if x != 0 || y != 0 then 1 else 0))
   table.put("max/", createAccumulatingOperation((x, y) => if x > y then x else y))
-
-
+  
   table.put("compress", FunctionDefinitionEntry(2,
     (env, arguments) =>
       val a = arguments.head
@@ -51,6 +50,33 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
         case _ => Left("Invalid 1st argument. Must be a vector")
   ))
 
+  table.put("shape", FunctionDefinitionEntry(1,
+    (env, arguments) =>
+      val a = arguments.head
+      a match 
+        case IntegerValue(_) => Right(MatrixValue(Seq.empty, MatrixDimensions(0, 0)))
+        case MatrixValue(_, dimensions) => 
+          Right(
+            if dimensions.isVector() then 
+              MatrixValue(Seq(dimensions.cols), MatrixDimensions(1, 1))
+            else
+              MatrixValue(Seq(dimensions.rows, dimensions.cols), MatrixDimensions(1, 2))
+          )
+      
+  ))
+
+  table.put("ravel", FunctionDefinitionEntry(1,
+    (env, arguments) =>
+      val a = arguments.head
+      a match
+        case IntegerValue(v) => Right(MatrixValue(Seq(v), MatrixDimensions(1, 1)))
+        case MatrixValue(v, dimensions) =>
+          Right(
+            MatrixValue(v, MatrixDimensions(1, dimensions.rows * dimensions.cols))
+          )
+
+  ))
+  
   table.put("cdr", FunctionDefinitionEntry(1,
     (env, arguments) =>
       arguments.head match
