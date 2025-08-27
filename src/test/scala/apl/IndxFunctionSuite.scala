@@ -16,6 +16,7 @@ final class IndxFunctionSuite extends FunSuite{
 
   private def m(rows: Int, cols: Int)(xs: Int*) = MatrixValue(xs, MatrixDimensions(rows, cols))
 
+  // ---- Tests ----------------------------------------------------------------
   test("indx with a positive integer") {
     val a = i(10)
 

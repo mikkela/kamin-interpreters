@@ -37,10 +37,10 @@ final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
 
   // ---- registration presence & arity --------------------------------------
 
-  test("registers +, -, /, *, =, <, >, max, min, +/, -/, */, //, compress, shape, ravel, restruct, cat, indx") {
+  test("registers +, -, /, *, =, <, >, max, min, +/, -/, */, //, compress, shape, ravel, restruct, cat, indx, trans") {
     List(
       "+", "-", "/", "*", "=", "<", ">", "max", "min", "or", "and", "+/", "-/", "*/",
-      "//", "max/", "and/", "or/", "compress", "shape", "ravel", "restruct", "cat", "indx").foreach { s =>
+      "//", "max/", "and/", "or/", "compress", "shape", "ravel", "restruct", "cat", "indx", "trans").foreach { s =>
       assert(functionDefinitionTable.lookupFunctionDefinition(s).nonEmpty, clues(s))
     }
   }
@@ -70,6 +70,7 @@ final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
     assertEquals(entry("restruct").numberOfArguments, 2)
     assertEquals(entry("cat").numberOfArguments, 2)
     assertEquals(entry("indx").numberOfArguments, 1)
+    assertEquals(entry("trans").numberOfArguments, 1)
   }
 
   // ---- light smoke tests to verify wiring (not re-testing mechanics) ------
@@ -189,5 +190,9 @@ final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
 
   test("indx produces a vector result (smoke)") {
     assertEquals(run("indx", IntegerValue(2)), Right(MatrixValue.vector(Seq(1, 2))))
+  }
+
+  test("trans produces a scalar result (smoke)") {
+    assertEquals(run("trans", IntegerValue(2)), Right(IntegerValue(2)))
   }
 }

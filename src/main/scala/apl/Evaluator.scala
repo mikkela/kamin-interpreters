@@ -85,12 +85,13 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
         case _ => Left("Invalid type. Expected positive integer")
   ))
 
-  table.put("cdr", FunctionDefinitionEntry(1,
+  table.put("trans", FunctionDefinitionEntry(1,
     (env, arguments) =>
       arguments.head match
-        case ListValue(v) =>
-          if v.nonEmpty then Right(ListValue(v.tail)) else Left("The list is empty")
-        case _ => Left("Invalid types")
+        case v:IntegerValue => Right(v)
+        case m@MatrixValue(value, dimensions) if m.isVector() => Right(m)
+        case MatrixValue(value, dimensions) =>
+          Right(MatrixValue(value.sliding(dimensions.cols, dimensions.cols).toSeq.transpose.flatten, MatrixDimensions(dimensions.cols, dimensions.rows)))
   ))
 
   table.put("cons", FunctionDefinitionEntry(2,
