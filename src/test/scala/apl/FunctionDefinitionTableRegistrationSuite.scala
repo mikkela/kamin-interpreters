@@ -1,6 +1,7 @@
 // src/test/scala/<yourpkg>/FunctionDefinitionTableRegistrationSuite.scala
 // package <yourpkg>   // <- set your package if you use one
 
+import com.mikadocs.kamin.MatrixDimensions
 import munit.FunSuite
 
 // Import your production types/instances:
@@ -36,8 +37,8 @@ final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
 
   // ---- registration presence & arity --------------------------------------
 
-  test("registers +, -, /, *, =, <, >, max, min, +/, -/, */, //") {
-    List("+", "-", "/", "*", "=", "<", ">", "max", "min", "or", "and", "+/", "-/", "*/", "//", "max/", "and/", "or/").foreach { s =>
+  test("registers +, -, /, *, =, <, >, max, min, +/, -/, */, //, compress") {
+    List("+", "-", "/", "*", "=", "<", ">", "max", "min", "or", "and", "+/", "-/", "*/", "//", "max/", "and/", "or/", "compress").foreach { s =>
       assert(functionDefinitionTable.lookupFunctionDefinition(s).nonEmpty, clues(s))
     }
   }
@@ -61,6 +62,7 @@ final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
     assertEquals(entry("max/").numberOfArguments, 1)
     assertEquals(entry("and/").numberOfArguments, 1)
     assertEquals(entry("or/").numberOfArguments, 1)
+    assertEquals(entry("compress").numberOfArguments, 2)
   }
 
   // ---- light smoke tests to verify wiring (not re-testing mechanics) ------
@@ -151,5 +153,10 @@ final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
 
   test("or/ produces a scalar result (smoke)") {
     assertEquals(run("or/", IntegerValue(2)), Right(IntegerValue(2)))
+  }
+
+  test("compress produces a matrix result (smoke)") {
+    assertEquals(run2("compress", MatrixValue(Seq(0, 1), MatrixDimensions(1, 2)), MatrixValue(Seq(1, 2), MatrixDimensions(1, 2))),
+      Right(MatrixValue(Seq(2), MatrixDimensions(1,1))))
   }
 }

@@ -32,12 +32,23 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
   table.put("max/", createAccumulatingOperation((x, y) => if x > y then x else y))
 
 
-  table.put("car", FunctionDefinitionEntry(1,
+  table.put("compress", FunctionDefinitionEntry(2,
     (env, arguments) =>
-      arguments.head match
-        case ListValue(v) =>
-          if v.nonEmpty then Right(v.head) else Left("The list is empty")
-        case _ => Left("Invalid types")
+      val a = arguments.head
+      val b = arguments(1)
+      a match
+        case MatrixValue(aValue, aDimensions) if aDimensions.isVector() =>
+          b match
+            case MatrixValue(bValue, bDimensions) if bDimensions.isVector() =>
+              val v = repeatOrChop(aValue, bDimensions.cols)
+              val temp = v.zip(bValue).filter((x, _) => x != 0).map((_, y) => y)
+              Right(MatrixValue(temp, MatrixDimensions(if (temp.length > 0) 1 else 0, temp.length)))
+            case MatrixValue(bValue, bDimensions) =>
+              val v = repeatOrChop(aValue, bDimensions.rows)
+              val temp = v.zip(bValue.sliding(bDimensions.cols, bDimensions.cols)).filter((x, _) => x != 0).map((_, y) => y).flatten
+              Right(MatrixValue(temp, MatrixDimensions(if (temp.length > 0) 1 else 0, temp.length)))
+            case _ => Left("Invalid 2nd argument. Must be a matrix")
+        case _ => Left("Invalid 1st argument. Must be a vector")
   ))
 
   table.put("cdr", FunctionDefinitionEntry(1,
@@ -95,6 +106,14 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
     v match
       case MatrixValue(value, dimensions) if dimensions.cols == 1 && dimensions.rows == 1 => IntegerValue(value.head)
       case _ => v
+
+  private def repeatOrChop[A](xs: Seq[A], n: Int): Seq[A] =
+    require(n >= 0, "n must be >= 0")
+    if (n <= xs.length) xs.take(n)
+    else
+      require(xs.nonEmpty, "cannot repeat an empty sequence to a positive length")
+      Iterator.continually(xs).flatten.take(n).toSeq
+
 
   private def createAccumulatingOperation(
                                            op: (Int, Int) => Int,
