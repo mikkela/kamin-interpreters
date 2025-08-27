@@ -2,8 +2,6 @@ package com.mikadocs.kamin
 package apl
 
 object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEvaluator(e)):
-  private def shape(v: MatrixValue) = v.dimensions
-
   table.put("+", createBinaryOperation(_ + _))
   table.put("-", createBinaryOperation(_ - _))
   table.put("/", createBinaryOperation(
@@ -30,22 +28,15 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
   table.put("and/", createAccumulatingOperation((x, y) => if x != 0 && y != 0 then 1 else 0))
   table.put("or/", createAccumulatingOperation((x, y) => if x != 0 || y != 0 then 1 else 0))
   table.put("max/", createAccumulatingOperation((x, y) => if x > y then x else y))
-  
+
   table.put("compress", FunctionDefinitionEntry(2,
     (env, arguments) =>
       val a = arguments.head
       val b = arguments(1)
       a match
-        case MatrixValue(aValue, aDimensions) if aDimensions.isVector() =>
+        case am: MatrixValue if am.isVector() =>
           b match
-            case MatrixValue(bValue, bDimensions) if bDimensions.isVector() =>
-              val v = repeatOrChop(aValue, bDimensions.cols)
-              val temp = v.zip(bValue).filter((x, _) => x != 0).map((_, y) => y)
-              Right(MatrixValue(temp, MatrixDimensions(if (temp.length > 0) 1 else 0, temp.length)))
-            case MatrixValue(bValue, bDimensions) =>
-              val v = repeatOrChop(aValue, bDimensions.rows)
-              val temp = v.zip(bValue.sliding(bDimensions.cols, bDimensions.cols)).filter((x, _) => x != 0).map((_, y) => y).flatten
-              Right(MatrixValue(temp, MatrixDimensions(if (temp.length > 0) 1 else 0, temp.length)))
+            case bm: MatrixValue => Right(MatrixValue.compress(am, bm))
             case _ => Left("Invalid 2nd argument. Must be a matrix")
         case _ => Left("Invalid 1st argument. Must be a vector")
   ))
@@ -53,30 +44,32 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
   table.put("shape", FunctionDefinitionEntry(1,
     (env, arguments) =>
       val a = arguments.head
-      a match 
-        case IntegerValue(_) => Right(MatrixValue(Seq.empty, MatrixDimensions(0, 0)))
-        case MatrixValue(_, dimensions) => 
-          Right(
-            if dimensions.isVector() then 
-              MatrixValue(Seq(dimensions.cols), MatrixDimensions(1, 1))
-            else
-              MatrixValue(Seq(dimensions.rows, dimensions.cols), MatrixDimensions(1, 2))
-          )
-      
+      a match
+        case _: IntegerValue => Right(MatrixValue.nullMatrix)
+        case m: MatrixValue => Right(m.shape())
   ))
 
   table.put("ravel", FunctionDefinitionEntry(1,
     (env, arguments) =>
       val a = arguments.head
       a match
-        case IntegerValue(v) => Right(MatrixValue(Seq(v), MatrixDimensions(1, 1)))
-        case MatrixValue(v, dimensions) =>
-          Right(
-            MatrixValue(v, MatrixDimensions(1, dimensions.rows * dimensions.cols))
-          )
+        case IntegerValue(v) => Right(MatrixValue.toMatrix(v))
+        case m: MatrixValue => Right(m.ravel())
+  ))
+
+  table.put("restruct", FunctionDefinitionEntry(2,
+    (env, arguments) =>
+      val a = arguments.head
+      val b = arguments(1)
+      a match
+        case am: MatrixValue if am.isShapeVector() =>
+          b match
+            case IntegerValue(v) => Right(MatrixValue.restruct(am, MatrixValue.toMatrix(v)))
+            case bm: MatrixValue if !bm.isNullMatrix() => Right(MatrixValue.restruct(am, bm))
+            case _ => Left("Invalid 2nd argument. It is a null matrix")
+        case _ => Left("Invalid 1st argument. Must be a shape vector")
 
   ))
-  
   table.put("cdr", FunctionDefinitionEntry(1,
     (env, arguments) =>
       arguments.head match
@@ -133,14 +126,6 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
       case MatrixValue(value, dimensions) if dimensions.cols == 1 && dimensions.rows == 1 => IntegerValue(value.head)
       case _ => v
 
-  private def repeatOrChop[A](xs: Seq[A], n: Int): Seq[A] =
-    require(n >= 0, "n must be >= 0")
-    if (n <= xs.length) xs.take(n)
-    else
-      require(xs.nonEmpty, "cannot repeat an empty sequence to a positive length")
-      Iterator.continually(xs).flatten.take(n).toSeq
-
-
   private def createAccumulatingOperation(
                                            op: (Int, Int) => Int,
                                            validate: Seq[Int] => Either[String, Unit] = _ => Right(())
@@ -189,7 +174,7 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
 
         // matrix ∘ matrix (element-wise)
         case (m1 @ MatrixValue(as, d1), m2 @ MatrixValue(bs, d2)) =>
-          if (shape(m1) != shape(m2)) Left(shapeError)
+          if (m1.dimensions != m2.dimensions) Left(shapeError)
           else
             // validate pairwise first
             val validated = as.zip(bs).foldLeft[Either[String, Unit]](Right(())) {

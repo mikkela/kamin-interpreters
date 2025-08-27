@@ -37,8 +37,10 @@ final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
 
   // ---- registration presence & arity --------------------------------------
 
-  test("registers +, -, /, *, =, <, >, max, min, +/, -/, */, //, compress, shape, ravel") {
-    List("+", "-", "/", "*", "=", "<", ">", "max", "min", "or", "and", "+/", "-/", "*/", "//", "max/", "and/", "or/", "compress", "shape", "ravel").foreach { s =>
+  test("registers +, -, /, *, =, <, >, max, min, +/, -/, */, //, compress, shape, ravel, restruct") {
+    List(
+      "+", "-", "/", "*", "=", "<", ">", "max", "min", "or", "and", "+/", "-/", "*/",
+      "//", "max/", "and/", "or/", "compress", "shape", "ravel", "restruct").foreach { s =>
       assert(functionDefinitionTable.lookupFunctionDefinition(s).nonEmpty, clues(s))
     }
   }
@@ -65,6 +67,7 @@ final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
     assertEquals(entry("compress").numberOfArguments, 2)
     assertEquals(entry("shape").numberOfArguments, 1)
     assertEquals(entry("ravel").numberOfArguments, 1)
+    assertEquals(entry("restruct").numberOfArguments, 2)
   }
 
   // ---- light smoke tests to verify wiring (not re-testing mechanics) ------
@@ -170,5 +173,10 @@ final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
   test("ravel produces a vector result (smoke)") {
     assertEquals(run("ravel", MatrixValue(Seq(0, 1), MatrixDimensions(1, 2))),
       Right(MatrixValue(Seq(0, 1), MatrixDimensions(1, 2))))
+  }
+
+  test("restruct produces an integer result (smoke)") {
+    assertEquals(run2("restruct", MatrixValue.vector(Seq.empty), IntegerValue(2)),
+      Right(IntegerValue(2)))
   }
 }
