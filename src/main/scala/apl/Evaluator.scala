@@ -73,10 +73,18 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
     (env, arguments) =>
       val a = ravel(arguments.head)
       val b = ravel(arguments(1))
-      
+
       Right(MatrixValue.vector(a.value ++ b.value))
   ))
-  
+
+  table.put("indx", FunctionDefinitionEntry(1,
+    (env, arguments) =>
+      arguments.head match
+        case IntegerValue(v) if v > 0 =>
+          Right(MatrixValue.vector(1 to v))
+        case _ => Left("Invalid type. Expected positive integer")
+  ))
+
   table.put("cdr", FunctionDefinitionEntry(1,
     (env, arguments) =>
       arguments.head match
