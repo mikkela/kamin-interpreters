@@ -1,6 +1,6 @@
 package apl
 
-import com.mikadocs.kamin.{Dimensions, IntegerValue, MatrixValue, Value}
+import com.mikadocs.kamin.{MatrixDimensions, IntegerValue, MatrixValue, Value}
 import com.mikadocs.kamin.apl.functionDefinitionTable
 import munit.FunSuite
 
@@ -26,11 +26,11 @@ class UnaryOperatorCombosSuite extends FunSuite {
   }
 
   test("+/ vector") {
-    assertEquals(run("+/", MatrixValue(Seq(1, 2, 3), Dimensions(1, 3))), Right(IntegerValue(6)))
+    assertEquals(run("+/", MatrixValue(Seq(1, 2, 3), MatrixDimensions(1, 3))), Right(IntegerValue(6)))
   }
 
   test("+/ matrix") {
-    assertEquals(run("+/", MatrixValue(Seq(1, 2, 3, 4, 5, 6), Dimensions(3, 2))), Right(MatrixValue(Seq(3, 7, 11), Dimensions(3, 1))))
+    assertEquals(run("+/", MatrixValue(Seq(1, 2, 3, 4, 5, 6), MatrixDimensions(3, 2))), Right(MatrixValue(Seq(3, 7, 11), MatrixDimensions(3, 1))))
   }
 
   // -- -/ ---------------------------------------------------------------------
@@ -40,11 +40,11 @@ class UnaryOperatorCombosSuite extends FunSuite {
   }
 
   test("-/ vector") {
-    assertEquals(run("-/", MatrixValue(Seq(1, 2, 3), Dimensions(1, 3))), Right(IntegerValue(-4)))
+    assertEquals(run("-/", MatrixValue(Seq(1, 2, 3), MatrixDimensions(1, 3))), Right(IntegerValue(-4)))
   }
 
   test("-/ matrix") {
-    assertEquals(run("-/", MatrixValue(Seq(1, 2, 3, 4, 5, 6), Dimensions(3, 2))), Right(MatrixValue(Seq(-1, -1, -1), Dimensions(3, 1))))
+    assertEquals(run("-/", MatrixValue(Seq(1, 2, 3, 4, 5, 6), MatrixDimensions(3, 2))), Right(MatrixValue(Seq(-1, -1, -1), MatrixDimensions(3, 1))))
   }
 
   // -- */ ---------------------------------------------------------------------
@@ -54,11 +54,11 @@ class UnaryOperatorCombosSuite extends FunSuite {
   }
 
   test("*/ vector") {
-    assertEquals(run("*/", MatrixValue(Seq(1, 2, 3), Dimensions(1, 3))), Right(IntegerValue(6)))
+    assertEquals(run("*/", MatrixValue(Seq(1, 2, 3), MatrixDimensions(1, 3))), Right(IntegerValue(6)))
   }
 
   test("*/ matrix") {
-    assertEquals(run("*/", MatrixValue(Seq(1, 2, 3, 4, 5, 6), Dimensions(3, 2))), Right(MatrixValue(Seq(2, 12, 30), Dimensions(3, 1))))
+    assertEquals(run("*/", MatrixValue(Seq(1, 2, 3, 4, 5, 6), MatrixDimensions(3, 2))), Right(MatrixValue(Seq(2, 12, 30), MatrixDimensions(3, 1))))
   }
 
   // -- // ---------------------------------------------------------------------
@@ -69,14 +69,14 @@ class UnaryOperatorCombosSuite extends FunSuite {
   }
 
   test("// vector") {
-    assertEquals(run("//", MatrixValue(Seq(4, 2, 2), Dimensions(1, 3))), Right(IntegerValue(1)))
-    assertEquals(run("//", MatrixValue(Seq(0, 2, 2), Dimensions(1, 3))), Right(IntegerValue(0)))
-    assertEquals(run("//", MatrixValue(Seq(4, 2, 0), Dimensions(1, 3))), Left("Division with zero"))
+    assertEquals(run("//", MatrixValue(Seq(4, 2, 2), MatrixDimensions(1, 3))), Right(IntegerValue(1)))
+    assertEquals(run("//", MatrixValue(Seq(0, 2, 2), MatrixDimensions(1, 3))), Right(IntegerValue(0)))
+    assertEquals(run("//", MatrixValue(Seq(4, 2, 0), MatrixDimensions(1, 3))), Left("Division with zero"))
   }
 
   test("// matrix") {
-    assertEquals(run("//", MatrixValue(Seq(0, 1, 8, 4, 18, 6), Dimensions(3, 2))), Right(MatrixValue(Seq(0, 2, 3), Dimensions(3, 1))))
-    assertEquals(run("//", MatrixValue(Seq(2, 1, 8, 0, 18, 6), Dimensions(3, 2))), Left("Division with zero"))
+    assertEquals(run("//", MatrixValue(Seq(0, 1, 8, 4, 18, 6), MatrixDimensions(3, 2))), Right(MatrixValue(Seq(0, 2, 3), MatrixDimensions(3, 1))))
+    assertEquals(run("//", MatrixValue(Seq(2, 1, 8, 0, 18, 6), MatrixDimensions(3, 2))), Left("Division with zero"))
   }
 
   // -- and/ ---------------------------------------------------------------------
@@ -86,12 +86,12 @@ class UnaryOperatorCombosSuite extends FunSuite {
   }
 
   test("and/ vector") {
-    assertEquals(run("and/", MatrixValue(Seq(1, 2, 3), Dimensions(1, 3))), Right(IntegerValue(1)))
-    assertEquals(run("and/", MatrixValue(Seq(1, 0, 3), Dimensions(1, 3))), Right(IntegerValue(0)))
+    assertEquals(run("and/", MatrixValue(Seq(1, 2, 3), MatrixDimensions(1, 3))), Right(IntegerValue(1)))
+    assertEquals(run("and/", MatrixValue(Seq(1, 0, 3), MatrixDimensions(1, 3))), Right(IntegerValue(0)))
   }
 
   test("and/ matrix") {
-    assertEquals(run("and/", MatrixValue(Seq(1, 2, 3, 0, 0, 6), Dimensions(3, 2))), Right(MatrixValue(Seq(1, 0, 0), Dimensions(3, 1))))
+    assertEquals(run("and/", MatrixValue(Seq(1, 2, 3, 0, 0, 6), MatrixDimensions(3, 2))), Right(MatrixValue(Seq(1, 0, 0), MatrixDimensions(3, 1))))
   }
 
   // -- or/ ---------------------------------------------------------------------
@@ -101,12 +101,12 @@ class UnaryOperatorCombosSuite extends FunSuite {
   }
 
   test("or/ vector") {
-    assertEquals(run("or/", MatrixValue(Seq(1, 0, 3), Dimensions(1, 3))), Right(IntegerValue(1)))
-    assertEquals(run("or/", MatrixValue(Seq(0, 0, 0), Dimensions(1, 3))), Right(IntegerValue(0)))
+    assertEquals(run("or/", MatrixValue(Seq(1, 0, 3), MatrixDimensions(1, 3))), Right(IntegerValue(1)))
+    assertEquals(run("or/", MatrixValue(Seq(0, 0, 0), MatrixDimensions(1, 3))), Right(IntegerValue(0)))
   }
 
   test("or/ matrix") {
-    assertEquals(run("or/", MatrixValue(Seq(0, 0, 3, 0, 0, 6), Dimensions(3, 2))), Right(MatrixValue(Seq(0, 1, 1), Dimensions(3, 1))))
+    assertEquals(run("or/", MatrixValue(Seq(0, 0, 3, 0, 0, 6), MatrixDimensions(3, 2))), Right(MatrixValue(Seq(0, 1, 1), MatrixDimensions(3, 1))))
   }
 
   // -- max/ ---------------------------------------------------------------------
@@ -116,10 +116,10 @@ class UnaryOperatorCombosSuite extends FunSuite {
   }
 
   test("max/ vector") {
-    assertEquals(run("max/", MatrixValue(Seq(1, 2, 3), Dimensions(1, 3))), Right(IntegerValue(3)))
+    assertEquals(run("max/", MatrixValue(Seq(1, 2, 3), MatrixDimensions(1, 3))), Right(IntegerValue(3)))
   }
 
   test("max/ matrix") {
-    assertEquals(run("max/", MatrixValue(Seq(1, 2, 3, 4, 6, 5), Dimensions(3, 2))), Right(MatrixValue(Seq(2, 4, 6), Dimensions(3, 1))))
+    assertEquals(run("max/", MatrixValue(Seq(1, 2, 3, 4, 6, 5), MatrixDimensions(3, 2))), Right(MatrixValue(Seq(2, 4, 6), MatrixDimensions(3, 1))))
   }
 }

@@ -38,11 +38,12 @@ implicit class SymbolValueExtension(val s: String) extends AnyVal:
 object ListValue:
   val nil: ListValue = ListValue(List.empty)
 
-case class Dimensions(rows: Int, cols: Int)
+case class MatrixDimensions(rows: Int, cols: Int):
+  def isVector() = rows == 1
 
-case class MatrixValue(value: Seq[Int], dimensions: Dimensions) extends Value:
+case class MatrixValue(value: Seq[Int], dimensions: MatrixDimensions) extends Value:
   override def toString: String = ""
 
 object MatrixValue:
   def vector(value: Seq[Int]): MatrixValue =
-    MatrixValue(value = value, dimensions = Dimensions(1, value.length))
+    MatrixValue(value = value, dimensions = MatrixDimensions(1, value.length))

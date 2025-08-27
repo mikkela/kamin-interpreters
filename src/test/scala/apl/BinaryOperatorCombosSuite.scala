@@ -3,7 +3,7 @@ package apl
 import munit.FunSuite
 
 import com.mikadocs.kamin.apl.functionDefinitionTable
-import com.mikadocs.kamin.{Value, IntegerValue, MatrixValue} // and Dimensions if you need it elsewhere
+import com.mikadocs.kamin.{Value, IntegerValue, MatrixValue} // and MatrixDimensions if you need it elsewhere
 
 final class BinaryOperatorCombosSuite extends FunSuite {
 

@@ -5,7 +5,7 @@ import munit.FunSuite
 
 // Import your production types/instances:
 import com.mikadocs.kamin.apl.functionDefinitionTable
-import com.mikadocs.kamin.{Value, IntegerValue, MatrixValue} // and Dimensions if you need it elsewhere
+import com.mikadocs.kamin.{Value, IntegerValue, MatrixValue} // and MatrixDimensions if you need it elsewhere
 
 final class FunctionDefinitionTableRegistrationSuite extends FunSuite {
   // ---- helpers -------------------------------------------------------------

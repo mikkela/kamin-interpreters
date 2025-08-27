@@ -109,7 +109,7 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
           validate(value).map(_ =>
             simplify(
               MatrixValue(
-                value.sliding(dimensions.cols, dimensions.cols).map(_.reduce(op)).toSeq, Dimensions(dimensions.rows, 1)
+                value.sliding(dimensions.cols, dimensions.cols).map(_.reduce(op)).toSeq, MatrixDimensions(dimensions.rows, 1)
               )
             )
           )
