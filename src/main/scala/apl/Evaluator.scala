@@ -34,7 +34,7 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
       val a = arguments.head
       val b = arguments(1)
       a match
-        case am: MatrixValue if am.isVector() =>
+        case am: MatrixValue if am.isVector =>
           b match
             case bm: MatrixValue => Right(MatrixValue.compress(am, bm))
             case _ => Left("Invalid 2nd argument. Must be a matrix")
@@ -46,7 +46,7 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
       val a = arguments.head
       a match
         case _: IntegerValue => Right(MatrixValue.nullMatrix)
-        case m: MatrixValue => Right(m.shape())
+        case m: MatrixValue => Right(m.shape)
   ))
 
   table.put("ravel", FunctionDefinitionEntry(1,
@@ -60,10 +60,10 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
       val a = arguments.head
       val b = arguments(1)
       a match
-        case am: MatrixValue if am.isShapeVector() =>
+        case am: MatrixValue if am.isShapeVector =>
           b match
             case IntegerValue(v) => Right(MatrixValue.restruct(am, MatrixValue.toMatrix(v)))
-            case bm: MatrixValue if !bm.isNullMatrix() => Right(MatrixValue.restruct(am, bm))
+            case bm: MatrixValue if !bm.isNullMatrix => Right(MatrixValue.restruct(am, bm))
             case _ => Left("Invalid 2nd argument. It is a null matrix")
         case _ => Left("Invalid 1st argument. Must be a shape vector")
 
@@ -81,7 +81,7 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
     (env, arguments) =>
       arguments.head match
         case IntegerValue(v) if v > 0 =>
-          Right(MatrixValue.vector(1 to v))
+          Right(MatrixValue.index(v))
         case _ => Left("Invalid type. Expected positive integer")
   ))
 
@@ -89,48 +89,19 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
     (env, arguments) =>
       arguments.head match
         case v:IntegerValue => Right(v)
-        case m@MatrixValue(value, dimensions) if m.isVector() => Right(m)
-        case MatrixValue(value, dimensions) =>
-          Right(MatrixValue(value.sliding(dimensions.cols, dimensions.cols).toSeq.transpose.flatten, MatrixDimensions(dimensions.cols, dimensions.rows)))
+        case m:MatrixValue =>
+          Right(m.transpose)
   ))
 
-  table.put("cons", FunctionDefinitionEntry(2,
+
+  table.put("[]", FunctionDefinitionEntry(2,
     (env, arguments) =>
       (arguments.head, arguments(1)) match
-        case (head , tail: ListValue) =>
-          Right(ListValue(head :: tail.value))
-        case _ => Right(ListValue.nil)
-  ))
-
-  table.put("number?", FunctionDefinitionEntry(1,
-    (env, arguments) =>
-      arguments.head match
-        case IntegerValue(_) => Right(SymbolValue.T)
-        case _ => Right(ListValue.nil)
-
-  ))
-
-  table.put("symbol?", FunctionDefinitionEntry(1,
-    (env, arguments) =>
-      arguments.head match
-        case SymbolValue(_) => Right(SymbolValue.T)
-        case _ => Right(ListValue.nil)
-  ))
-
-  table.put("list?", FunctionDefinitionEntry(1,
-    (env, arguments) =>
-      arguments.head match
-        case ListValue(v) =>
-          if v.nonEmpty then Right(SymbolValue.T) else Right(ListValue.nil)
-        case _ => Right(ListValue.nil)
-  ))
-
-  table.put("null?", FunctionDefinitionEntry(1,
-    (env, arguments) =>
-      arguments.head match
-        case ListValue(v) =>
-          if v.isEmpty then Right(SymbolValue.T) else Right(ListValue.nil)
-        case _ => Right(ListValue.nil)
+        case (m:MatrixValue, i:IntegerValue) =>
+          Right(m.subscription(MatrixValue.vector(Seq(i.value))))
+        case (m1: MatrixValue, m2: MatrixValue) if m2.isVector =>
+          Right(m1.subscription(m2))
+        case _ => Left("Invalid type. Expected matrix as first argument and vector or integer as second")
   ))
 
   table.put("print", FunctionDefinitionEntry(1, (env, arguments) =>
@@ -145,7 +116,7 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
   private def ravel(value: Value): MatrixValue =
     value match
       case IntegerValue(v) => MatrixValue.toMatrix(v)
-      case m: MatrixValue => m.ravel()
+      case m: MatrixValue => m.ravel
 
   private def createAccumulatingOperation(
                                            op: (Int, Int) => Int,

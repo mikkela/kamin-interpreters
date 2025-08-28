@@ -44,14 +44,33 @@ case class MatrixDimensions(rows: Int, cols: Int)
 
 case class MatrixValue(value: Seq[Int], dimensions: MatrixDimensions) extends Value:
   override def toString: String = ""
-  def isVector() = dimensions.rows == 1
-  def isShapeVector() = isVector() && dimensions.cols <= 2
-  def isNullMatrix() = value.isEmpty
-  def shape() =
-    if isVector() then vector(Seq(dimensions.cols))
+
+  def isVector: Boolean = dimensions.rows == 1
+  def isShapeVector: Boolean = isVector && dimensions.cols <= 2
+
+  def isNullMatrix: Boolean = value.isEmpty
+
+  def shape: MatrixValue =
+    if isVector then vector(Seq(dimensions.cols))
     else vector(Seq(dimensions.rows, dimensions.cols))
-  def ravel(): MatrixValue =
+  def ravel: MatrixValue =
     vector(value)
+  def transpose : MatrixValue =
+    if isVector then
+      this
+    else
+      MatrixValue(value.sliding(dimensions.cols, dimensions.cols).toSeq.transpose.flatten, MatrixDimensions(dimensions.cols, dimensions.rows))
+
+  def subscription(pVector: MatrixValue): MatrixValue = {
+    require(pVector.isVector)
+    if isVector then
+      MatrixValue.vector(pVector.value.map(i => value(i - 1)))
+    else {
+      val rows = value.sliding(dimensions.cols, dimensions.cols).toSeq
+      val picked = pVector.value.map(i => rows(i - 1)).flatten
+      MatrixValue(picked, MatrixDimensions(pVector.value.length, dimensions.cols))
+    }
+  }
 
 object MatrixValue:
   def vector(value: Seq[Int]): MatrixValue =
@@ -60,9 +79,9 @@ object MatrixValue:
   def toMatrix(value: Integer): MatrixValue = MatrixValue(Seq(value), MatrixDimensions(1, 1))
   def nullMatrix: MatrixValue = MatrixValue(Seq.empty, MatrixDimensions(0, 0))
   def nullVector: MatrixValue = MatrixValue(Seq.empty, MatrixDimensions(1, 0))
-  
+
   def compress(controlMatrix: MatrixValue, value: MatrixValue): MatrixValue =
-    if value.isVector() then
+    if value.isVector then
       val v = repeatOrChop(controlMatrix.value, value.dimensions.cols)
       val temp = v.zip(value.value).filter((x, _) => x != 0).map((_, y) => y)
       MatrixValue(temp, MatrixDimensions(if (temp.length > 0) 1 else 0, temp.length))
@@ -72,13 +91,17 @@ object MatrixValue:
       MatrixValue(temp, MatrixDimensions(if (temp.length > 0) 1 else 0, temp.length))
 
   def restruct(shape: MatrixValue, value: MatrixValue) =
-    require(shape.isNullMatrix() || shape.isShapeVector())
-    if (shape.isNullMatrix()) then
+    require(shape.isNullMatrix || shape.isShapeVector)
+    if shape.isNullMatrix then
       IntegerValue(value.value.head)
     else if (shape.dimensions.cols == 1) then
       MatrixValue(repeatOrChop(value.value, shape.value.head), MatrixDimensions(1, shape.value.head))
     else
       MatrixValue(repeatOrChop(value.value, shape.value.head * shape.value(1)), MatrixDimensions(shape.value.head, shape.value(1)))
+
+  def index(n: Int): MatrixValue =
+    require(n > 0)
+    MatrixValue.vector(1 to n)
 
   private def repeatOrChop[A](xs: Seq[A], n: Int): Seq[A] =
     require(n >= 0, "n must be >= 0")
