@@ -43,7 +43,13 @@ object ListValue:
 case class MatrixDimensions(rows: Int, cols: Int)
 
 case class MatrixValue(value: Seq[Int], dimensions: MatrixDimensions) extends Value:
-  override def toString: String = ""
+  override def toString: String =
+    value
+      .grouped(dimensions.cols)
+      .map(_.mkString(" "))
+      .mkString("", "\n", "\n")
+
+
 
   def isVector: Boolean = dimensions.rows == 1
   def isShapeVector: Boolean = isVector && dimensions.cols <= 2
