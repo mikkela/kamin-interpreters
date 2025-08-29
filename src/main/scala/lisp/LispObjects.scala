@@ -40,10 +40,15 @@ object lispInterpreter extends Interpreter:
 
   override def interpret(program: String): EvaluationResult =
     lispParser.parse(Scanner().scan(KaminSourceReader(SourceReader(program)))).map(
-      ast => LispEvaluator(LispEvaluator.globalEnvironment).visit(ast) match {
-        case Left(error) => error
-        case Right(result) => result.toString
-      }
+      ast =>
+        ast match
+          case n: FunctionDefinitionNode =>
+            functionDefinitionTable.register(n)
+            n.function
+          case n: ExpressionNode =>
+            LispEvaluator(LispEvaluator.globalEnvironment).visit(ast) match
+              case Left(error) => error
+              case Right(result) => result.toString
     )
 
   override def parseAndPrint(program: String): ParseAndPrintResult =

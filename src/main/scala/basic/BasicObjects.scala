@@ -36,10 +36,15 @@ object basicInterpreter extends Interpreter:
 
   override def interpret(program: String): EvaluationResult =
     basicParser.parse(Scanner().scan(KaminSourceReader(SourceReader(program)))).map(
-      ast => BasicEvaluator(BasicEvaluator.globalEnvironment).visit(ast) match {
-        case Left(error) => error
-        case Right(result) => result.toString
-      }
+      ast => 
+        ast match 
+          case n: FunctionDefinitionNode => 
+            functionDefinitionTable.register(n)
+            n.function
+          case n: ExpressionNode =>
+            BasicEvaluator(BasicEvaluator.globalEnvironment).visit(ast) match 
+              case Left(error) => error
+              case Right(result) => result.toString
     )
 
   override def parseAndPrint(program: String): ParseAndPrintResult =
