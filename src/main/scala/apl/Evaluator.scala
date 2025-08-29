@@ -98,9 +98,9 @@ object functionDefinitionTable extends FunctionDefinitionTable[Value](e => APLEv
     (env, arguments) =>
       (arguments.head, arguments(1)) match
         case (m:MatrixValue, i:IntegerValue) =>
-          Right(m.subscription(MatrixValue.vector(Seq(i.value))))
+          Right(simplify(m.subscription(MatrixValue.vector(Seq(i.value)))))
         case (m1: MatrixValue, m2: MatrixValue) if m2.isVector =>
-          Right(m1.subscription(m2))
+          Right(simplify(m1.subscription(m2)))
         case _ => Left("Invalid type. Expected matrix as first argument and vector or integer as second")
   ))
 
