@@ -41,7 +41,7 @@ class BasicEvaluator(val currentEnvironment: Environment[IntegerValue])
     node match
       case n:ValueExpressionNode => valueExpressionEvaluator.evaluate(n)
       case n:VariableExpressionNode => variableExpressionEvaluator.evaluate(n)
-      case n: IfExpressionNode => ifExpressionEvaluator.evaluate(n)
+      case n:IfExpressionNode => ifExpressionEvaluator.evaluate(n)
       case n:WhileExpressionNode => whileExpressionEvaluator.evaluate(n)
       case n: SetExpressionNode => setExpressionEvaluator.evaluate(n)
       case n: BeginExpressionNode => beginExpressionEvaluator.evaluate(n)

@@ -6,7 +6,8 @@ import org.jline.terminal.TerminalBuilder
 val languageMap: Map[String, Interpreter] = Map(
   "apl" -> apl.aplInterpreter,
   "basic" -> basic.basicInterpreter,
-  "lisp" -> lisp.lispInterpreter
+  "lisp" -> lisp.lispInterpreter,
+  "scheme" -> scheme.schemeInterpreter
 )
 
 @main

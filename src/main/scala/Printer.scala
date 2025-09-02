@@ -12,6 +12,8 @@ class ValueExpressionPrinter(val printer: Printer) extends NodePrinter[ValueExpr
       case v:IntegerValue => stringBuilder.append(v.value)
       case e:SExpressionNode => printer.visit(e)
       case v:MatrixValue => stringBuilder.append("'(" + v.value.mkString(" ") + ")")
+      case v:ValueOperatorValue => stringBuilder.append(v.operator)
+      case l:LambdaValue => stringBuilder.append("(lambda (" + l.args.mkString(" ") + ") " + printer.visit(l.body) + ")")
 
 class VariableExpressionPrinter extends NodePrinter[VariableExpressionNode]:
   override def printNodeTo(node: VariableExpressionNode, stringBuilder: StringBuilder): Unit =
@@ -54,6 +56,18 @@ class BeginExpressionPrinter(val printer: Printer) extends NodePrinter[BeginExpr
     )
     stringBuilder.append(")")
 
+class ExpressionListExpressionPrinter(val printer: Printer) extends NodePrinter[ExpressionListExpressionNode]:
+  override def printNodeTo(node: ExpressionListExpressionNode, stringBuilder: StringBuilder): Unit =
+    stringBuilder.append("(")
+    var writtenFirst = false
+    node.expressions.foreach(
+      e =>
+        if writtenFirst then stringBuilder.append(" ")
+        stringBuilder.append(printer.visit(e))
+        writtenFirst = true
+    )
+    stringBuilder.append(")")
+
 class OperationExpressionPrinter(val printer: Printer) extends NodePrinter[OperationExpressionNode]:
   override def printNodeTo(node: OperationExpressionNode, stringBuilder: StringBuilder): Unit =
     stringBuilder.append("( ")
@@ -74,13 +88,13 @@ class SExpressionPrinter(val printer: Printer) extends NodePrinter[SExpressionNo
         stringBuilder.append("(")
         var writtenFirst = false
         s.foreach(
-          e => 
+          e =>
             if writtenFirst then stringBuilder.append(" ")
-            printer.visit(e)
+            printNodeTo(e, stringBuilder)
             writtenFirst = true
         )
         stringBuilder.append(")")
-    
+
 
 class FunctionDefinitionPrinter(val printer: Printer) extends NodePrinter[FunctionDefinitionNode]:
   override def printNodeTo(node: FunctionDefinitionNode, stringBuilder: StringBuilder): Unit =

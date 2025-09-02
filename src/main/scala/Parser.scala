@@ -81,6 +81,7 @@ trait Parser[T <: Node]:
   Option[TokenTypeAlternative1 | TokenTypeAlternative2 | TokenTypeAlternative3 | TokenTypeAlternative4 | TokenTypeAlternative5] =
     matchToken[TokenTypeAlternative1, TokenTypeAlternative2, TokenTypeAlternative3, TokenTypeAlternative4](tokens).
       orElse(matchToken[TokenTypeAlternative5](tokens))
+      
   @targetName("match6Token")
   protected def matchToken[
     TokenTypeAlternative1 <: Token,
@@ -100,6 +101,28 @@ trait Parser[T <: Node]:
   Option[TokenTypeAlternative1 | TokenTypeAlternative2 | TokenTypeAlternative3 | TokenTypeAlternative4 | TokenTypeAlternative5 | TokenTypeAlternative6] =
     matchToken[TokenTypeAlternative1, TokenTypeAlternative2, TokenTypeAlternative3, TokenTypeAlternative4, TokenTypeAlternative5](tokens).
       orElse(matchToken[TokenTypeAlternative6](tokens))
+
+  @targetName("match7Token")
+  protected def matchToken[
+    TokenTypeAlternative1 <: Token,
+    TokenTypeAlternative2 <: Token,
+    TokenTypeAlternative3 <: Token,
+    TokenTypeAlternative4 <: Token,
+    TokenTypeAlternative5 <: Token,
+    TokenTypeAlternative6 <: Token,
+    TokenTypeAlternative7 <: Token
+  ]
+  (tokens: LookaheadIterator[Token])
+  (using ct1: ClassTag[TokenTypeAlternative1])
+  (using c2: ClassTag[TokenTypeAlternative2])
+  (using ct3: ClassTag[TokenTypeAlternative3])
+  (using ct4: ClassTag[TokenTypeAlternative4])
+  (using ct5: ClassTag[TokenTypeAlternative5])
+  (using ct6: ClassTag[TokenTypeAlternative6])
+  (using ct7: ClassTag[TokenTypeAlternative7]):
+  Option[TokenTypeAlternative1 | TokenTypeAlternative2 | TokenTypeAlternative3 | TokenTypeAlternative4 | TokenTypeAlternative5 | TokenTypeAlternative6 | TokenTypeAlternative7] =
+    matchToken[TokenTypeAlternative1, TokenTypeAlternative2, TokenTypeAlternative3, TokenTypeAlternative4, TokenTypeAlternative5, TokenTypeAlternative6](tokens).
+      orElse(matchToken[TokenTypeAlternative7](tokens))
 
 trait ExpressionParser extends Parser[ExpressionNode]
 
@@ -220,3 +243,25 @@ class SExpressionParser extends Parser[SExpressionNode], ExpressionListParser[SE
         handleUnmatchedToken(tokens.headOption)
     }
   }
+
+class LambdaExpressionParser(val expressionParser: ExpressionParser)
+  extends Parser[ValueExpressionNode], ArgumentListParser[ValueExpressionNode]:
+  override def parse(tokens: LookaheadIterator[Token]): ParserResult[ValueExpressionNode] =
+    // lambda keyword has been consumed
+    matchToken[LeftParenthesisToken](tokens) match
+      case Some(_) =>
+        parseList(
+          tokens,
+          Seq.empty[String],
+          arguments =>
+            expressionParser.parse(tokens).flatMap {
+              expression => Success(ValueExpressionNode(LambdaValue(arguments, expression)))
+            }
+        )
+
+      case None => handleUnmatchedToken(tokens.headOption, acceptUnfinished = true)
+
+class ExpressionListExpressionParser(val expressionParser: ExpressionParser) extends Parser[ExpressionListExpressionNode], ExpressionListParser[ExpressionNode, ExpressionListExpressionNode]:
+  override def parse(tokens: LookaheadIterator[Token]): ParserResult[ExpressionListExpressionNode] =
+    // begin keyword has been consumed
+    parseList(tokens, Seq.empty[ExpressionNode], exprs => Success(ExpressionListExpressionNode(exprs)), expressionParser)
