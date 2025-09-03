@@ -6,15 +6,19 @@ trait Printer extends NodeVisitor[String]
 trait NodePrinter[TNode <: Node]:
   def printNodeTo(node: TNode, stringBuilder: StringBuilder): Unit
 
+private def removeLastSpace(sb: StringBuilder): Unit =
+  if (sb.nonEmpty && sb(sb.length - 1) == ' ')
+    sb.setLength(sb.length - 1)
+  
 class ValueExpressionPrinter(val printer: Printer) extends NodePrinter[ValueExpressionNode]:
   override def printNodeTo(node: ValueExpressionNode, stringBuilder: StringBuilder): Unit =
     node.value match
       case v:IntegerValue => stringBuilder.append(v.value)
       case e:SExpressionNode => printer.visit(e)
       case v:MatrixValue => stringBuilder.append("'(" + v.value.mkString(" ") + ")")
-      case v:ValueOperatorValue => stringBuilder.append(v.operator)
-      case l:LambdaValue => stringBuilder.append("(lambda (" + l.args.mkString(" ") + ") " + printer.visit(l.body) + ")")
-
+      case v: PrimitiveOperationValue => stringBuilder.append(v.operation)
+      
+      
 class VariableExpressionPrinter extends NodePrinter[VariableExpressionNode]:
   override def printNodeTo(node: VariableExpressionNode, stringBuilder: StringBuilder): Unit =
     stringBuilder.append(node.variable)
@@ -56,16 +60,17 @@ class BeginExpressionPrinter(val printer: Printer) extends NodePrinter[BeginExpr
     )
     stringBuilder.append(")")
 
-class ExpressionListExpressionPrinter(val printer: Printer) extends NodePrinter[ExpressionListExpressionNode]:
-  override def printNodeTo(node: ExpressionListExpressionNode, stringBuilder: StringBuilder): Unit =
+class FunctionCallExpressionPrinter(val printer: Printer) extends NodePrinter[FunctionCallExpressionNode]:
+  override def printNodeTo(node: FunctionCallExpressionNode, stringBuilder: StringBuilder): Unit =
     stringBuilder.append("(")
-    var writtenFirst = false
-    node.expressions.foreach(
+    stringBuilder.append(printer.visit(node.function))
+    stringBuilder.append(" ")
+    node.parameters.foreach(
       e =>
-        if writtenFirst then stringBuilder.append(" ")
         stringBuilder.append(printer.visit(e))
-        writtenFirst = true
+        stringBuilder.append(" ")
     )
+    removeLastSpace(stringBuilder)
     stringBuilder.append(")")
 
 class OperationExpressionPrinter(val printer: Printer) extends NodePrinter[OperationExpressionNode]:

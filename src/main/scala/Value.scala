@@ -116,12 +116,13 @@ object MatrixValue:
       require(xs.nonEmpty, "cannot repeat an empty sequence to a positive length")
       Iterator.continually(xs).flatten.take(n).toSeq
 
-case class LambdaValue(args: Seq[String], body: ExpressionNode) extends Value:
+case class ClosureValue(functionDefinitionNode: FunctionDefinitionNode, parameters: Seq[Value], environment: Environment[Value]) extends Value:
   override def toString: String = "<closure>"
-  
-object LambdaValue
-  
-case class ValueOperatorValue(operator: String) extends Value:
-  override def toString: String = operator
-  
-object ValueOperatorValue
+
+object ClosureValue
+
+case class PrimitiveOperationValue(operation: String) extends Value:
+  override def toString: String = operation
+
+object PrimitiveOperationValue
+

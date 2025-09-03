@@ -30,7 +30,7 @@ trait ExpressionNodeEvaluator[TExpressionNode <: ExpressionNode, TValue <: Value
 class ValueExpressionEvaluator[TValue <: Value]
   extends ExpressionNodeEvaluator[ValueExpressionNode, TValue]:
   override def evaluate(node: ValueExpressionNode): Either[String, TValue] =  
-    node.value match 
+    node.value match
       case v:TValue => Right(v)
   
 
@@ -88,15 +88,10 @@ class BeginExpressionEvaluator[TValue <: Value] (
   override def evaluate(node: BeginExpressionNode): Either[String, TValue] =
     node.expressions.map(e => evaluator.visit(e)).last
 
-class OperationExpressionEvaluator[TValue <: Value] (
-                                                      val evaluator: Evaluator[TValue],
-                                                      val environment: Environment[TValue],
-                                                      functionDefinitionTable: FunctionDefinitionTable[TValue]
-                                                    )
-  extends ExpressionNodeEvaluator[OperationExpressionNode, TValue]:
-
-  private def evaluateParameters(parameters: Seq[ExpressionNode]
-                                ): Either[String, List[TValue]] =
+trait ArgumentListEvaluator[TValue <: Value]:
+  def evaluateParameters( evaluator: Evaluator[TValue],
+                          parameters: Seq[ExpressionNode]
+                              ): Either[String, List[TValue]] =
     parameters.foldLeft(Right(List.empty[TValue]): Either[String, List[TValue]]) { (acc, p) =>
       acc match
         case Left(error) => Left(error) // If there's already an error, keep it
@@ -106,11 +101,43 @@ class OperationExpressionEvaluator[TValue <: Value] (
             case Right(result) => Right(params :+ result) // Append result to the list if successful
     }
 
+class FunctionCallExpressionEvaluator[TValue <: Value](val evaluator: Evaluator[TValue],
+                                                       val environment: Environment[TValue],
+                                                       functionDefinitionTable: FunctionDefinitionTable[TValue])
+  extends ExpressionNodeEvaluator[FunctionCallExpressionNode, TValue], ArgumentListEvaluator[TValue]:
+
+  override def evaluate(node: FunctionCallExpressionNode): Either[String, TValue] = {
+    evaluator.visit(node.function) match
+      case Right(function) =>
+        val evaluated = evaluateParameters(evaluator, node.parameters)
+        evaluated match
+          case Left(error) => Left(error)
+          case Right(parameters) =>
+            function match
+              case f:PrimitiveOperationValue =>
+                functionDefinitionTable.lookupFunctionDefinition(f.operation) match
+                  case None => Left(s"Unknown operator: $node.operator")
+                  case Some(functionDefinition) =>
+                    if functionDefinition.numberOfArguments == parameters.length then
+                      functionDefinition.function(environment, parameters)
+                    else
+                      Left(s"$node.operator: invalid number of arguments")
+              case _ => Left("Failed")
+  }
+
+class OperationExpressionEvaluator[TValue <: Value] (
+                                                      val evaluator: Evaluator[TValue],
+                                                      val environment: Environment[TValue],
+                                                      functionDefinitionTable: FunctionDefinitionTable[TValue]
+                                                    )
+  extends ExpressionNodeEvaluator[OperationExpressionNode, TValue], ArgumentListEvaluator[TValue]:
+
+
   override def evaluate(node: OperationExpressionNode): Either[String, TValue] =
     functionDefinitionTable.lookupFunctionDefinition(node.operator) match
       case None => Left(s"Unknown operator: $node.operator")
       case Some(functionDefinition) =>
-        val evaluated = evaluateParameters(node.parameters)
+        val evaluated = evaluateParameters(evaluator, node.parameters)
         evaluated match
           case Left(error) => Left(error)
           case Right(parameters) =>
@@ -146,4 +173,3 @@ class SExpressionEvaluator(
           case Left(error) => Left(error)
           case Right(elements) => Right(ListValue(elements))
       
-    

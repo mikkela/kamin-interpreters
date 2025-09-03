@@ -22,7 +22,7 @@ trait Parser[T <: Node]:
                                               (using ct: ClassTag[TokenType]): Option[TokenType] =
     if !tokens.hasNext then None
     else
-      if ct.runtimeClass.isInstance(tokens.lookahead(1)(0)) then
+      if ct.runtimeClass.isInstance(tokens.lookahead(1).head) then
         Some(tokens.next().asInstanceOf[TokenType])
       else
         None
@@ -245,8 +245,8 @@ class SExpressionParser extends Parser[SExpressionNode], ExpressionListParser[SE
   }
 
 class LambdaExpressionParser(val expressionParser: ExpressionParser)
-  extends Parser[ValueExpressionNode], ArgumentListParser[ValueExpressionNode]:
-  override def parse(tokens: LookaheadIterator[Token]): ParserResult[ValueExpressionNode] =
+  extends Parser[LambdaExpressionNode], ArgumentListParser[LambdaExpressionNode]:
+  override def parse(tokens: LookaheadIterator[Token]): ParserResult[LambdaExpressionNode] =
     // lambda keyword has been consumed
     matchToken[LeftParenthesisToken](tokens) match
       case Some(_) =>
@@ -255,13 +255,16 @@ class LambdaExpressionParser(val expressionParser: ExpressionParser)
           Seq.empty[String],
           arguments =>
             expressionParser.parse(tokens).flatMap {
-              expression => Success(ValueExpressionNode(LambdaValue(arguments, expression)))
+              expression => Success(LambdaExpressionNode(arguments, expression))
             }
         )
 
       case None => handleUnmatchedToken(tokens.headOption, acceptUnfinished = true)
 
-class ExpressionListExpressionParser(val expressionParser: ExpressionParser) extends Parser[ExpressionListExpressionNode], ExpressionListParser[ExpressionNode, ExpressionListExpressionNode]:
-  override def parse(tokens: LookaheadIterator[Token]): ParserResult[ExpressionListExpressionNode] =
-    // begin keyword has been consumed
-    parseList(tokens, Seq.empty[ExpressionNode], exprs => Success(ExpressionListExpressionNode(exprs)), expressionParser)
+class FunctionCallExpressionParser(val expressionParser: ExpressionParser)
+  extends Parser[FunctionCallExpressionNode], ExpressionListParser[ExpressionNode, FunctionCallExpressionNode]:
+  override def parse(tokens: LookaheadIterator[Token]): ParserResult[FunctionCallExpressionNode] =
+    expressionParser.parse(tokens).flatMap {
+      function =>
+        parseList(tokens, Seq.empty[ExpressionNode], exprs => Success(FunctionCallExpressionNode(function, exprs)), expressionParser)
+    }

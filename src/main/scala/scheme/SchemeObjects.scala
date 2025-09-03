@@ -8,7 +8,7 @@ object schemePrinter extends Printer:
   private val whileExpressionPrinter = WhileExpressionPrinter(this)
   private val setExpressionPrinter = SetExpressionPrinter(this)
   private val beginExpressionPrinter = BeginExpressionPrinter(this)
-  private val expressionListPrinter = ExpressionListExpressionPrinter(this)
+  private val functionCallExpressionPrinter = FunctionCallExpressionPrinter(this)
   private val sExpressionPrinter = SExpressionPrinter(this)
   
   override def visit(node: Node): String =
@@ -26,8 +26,8 @@ object schemePrinter extends Printer:
         setExpressionPrinter.printNodeTo(n, result)
       case n:BeginExpressionNode =>
         beginExpressionPrinter.printNodeTo(n, result)
-      case n:ExpressionListExpressionNode =>
-        expressionListPrinter.printNodeTo(n, result)
+      case n:FunctionCallExpressionNode =>
+        functionCallExpressionPrinter.printNodeTo(n, result)
       case n:SExpressionNode =>
         result.append("'")
         sExpressionPrinter.printNodeTo(n, result)
@@ -36,18 +36,18 @@ object schemePrinter extends Printer:
 object schemeInterpreter extends Interpreter:
 
   override def interpret(program: String): EvaluationResult =
-    /*schemeParser.parse(Scanner().scan(KaminSourceReader(SourceReader(program)))).map(
+    schemeParser.parse(Scanner().scan(KaminSourceReader(SourceReader(program)))).map(
       ast =>
         ast match
           case n: FunctionDefinitionNode =>
             functionDefinitionTable.register(n)
             n.function
           case n: ExpressionNode =>
-            LispEvaluator(LispEvaluator.globalEnvironment).visit(ast) match
+            SchemeEvaluator(SchemeEvaluator.globalEnvironment).visit(ast) match
               case Left(error) => error
               case Right(result) => result.toString
-    )*/
-    Failure("Error")
+    )
+
 
   override def parseAndPrint(program: String): ParseAndPrintResult =
     schemeParser.parse(Scanner().scan(KaminSourceReader(SourceReader(program)))).map(
