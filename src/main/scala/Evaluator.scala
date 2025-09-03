@@ -88,6 +88,14 @@ class BeginExpressionEvaluator[TValue <: Value] (
   override def evaluate(node: BeginExpressionNode): Either[String, TValue] =
     node.expressions.map(e => evaluator.visit(e)).last
 
+class LambdaExpressionEvaluator[TValue <: Value] (
+                                                   val evaluator: Evaluator[TValue],
+                                                   val environment: Environment[TValue]
+                                                 )
+  extends ExpressionNodeEvaluator[LambdaExpressionNode, TValue]:
+  override def evaluate(node: LambdaExpressionNode): Either[String, TValue] =
+    Right(ClosureValue(node.arguments, node.expression, environment.asInstanceOf[Environment[Value]]).asInstanceOf[TValue])
+
 trait ArgumentListEvaluator[TValue <: Value]:
   def evaluateParameters( evaluator: Evaluator[TValue],
                           parameters: Seq[ExpressionNode]
@@ -103,6 +111,7 @@ trait ArgumentListEvaluator[TValue <: Value]:
 
 class FunctionCallExpressionEvaluator[TValue <: Value](val evaluator: Evaluator[TValue],
                                                        val environment: Environment[TValue],
+                                                       val evaluatorProducer: EvaluatorProducer[TValue],
                                                        functionDefinitionTable: FunctionDefinitionTable[TValue])
   extends ExpressionNodeEvaluator[FunctionCallExpressionNode, TValue], ArgumentListEvaluator[TValue]:
 
@@ -116,12 +125,19 @@ class FunctionCallExpressionEvaluator[TValue <: Value](val evaluator: Evaluator[
             function match
               case f:PrimitiveOperationValue =>
                 functionDefinitionTable.lookupFunctionDefinition(f.operation) match
-                  case None => Left(s"Unknown operator: $node.operator")
+                  case None => Left(s"Unknown operator: ${f.operation}")
                   case Some(functionDefinition) =>
                     if functionDefinition.numberOfArguments == parameters.length then
                       functionDefinition.function(environment, parameters)
                     else
-                      Left(s"$node.operator: invalid number of arguments")
+                      Left(s"${f.operation}: invalid number of arguments")
+              case f: ClosureValue =>
+                if f.arguments.length == parameters.length then
+                  val env = EnvironmentFrame[TValue](environment)
+                  f.arguments.zip(parameters).foreach((k, v) => env.set(k, v))
+                  evaluatorProducer(env).visit(f.body)
+                else
+                  Left(s"Lambda expression: invalid number of arguments")
               case _ => Left("Failed")
   }
 
