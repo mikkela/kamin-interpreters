@@ -234,9 +234,10 @@ class OperationExpressionParser(val expressionParser: ExpressionParser) extends 
 
 class SExpressionParser extends Parser[SExpressionNode], ExpressionListParser[SExpressionNode, SExpressionNode]:
   override def parse(tokens: LookaheadIterator[Token]): ParserResult[SExpressionNode] = {
-    matchToken[IntegerToken, NameToken, LeftParenthesisToken](tokens) match {
+    matchToken[IntegerToken, NameToken, OperatorToken, LeftParenthesisToken](tokens) match {
       case Some(t: IntegerToken) => Success(SExpressionNode(t.lexeme.toInt.toIntegerValue))
       case Some(t: NameToken) => Success(SExpressionNode(t.lexeme.toSymbolValue))
+      case Some(t: OperatorToken) => Success(SExpressionNode(t.lexeme.toSymbolValue))
       case Some(_: LeftParenthesisToken) =>
         parseList(tokens, Seq.empty[SExpressionNode], exprs => Success(SExpressionNode(exprs)), this)
       case None =>

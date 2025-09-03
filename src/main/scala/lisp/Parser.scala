@@ -19,7 +19,7 @@ object expressionParser extends ExpressionParser:
 
   override def parse(tokens: LookaheadIterator[Token]): ParserResult[ExpressionNode] =
     matchToken[IntegerToken, NameToken, QuoteToken, LeftParenthesisToken](tokens) match
-      case Some(t: IntegerToken) => Success(ValueExpressionNode(t.lexeme.toInt.toIntegerValue))
+      case Some(t: IntegerToken) => Success(SExpressionNode(t.lexeme.toInt.toIntegerValue))
       case Some(t: NameToken) => Success(VariableExpressionNode(t.lexeme))
       case Some(_: QuoteToken) => sExpressionParser.parse(tokens)
       case Some(_: LeftParenthesisToken) =>
