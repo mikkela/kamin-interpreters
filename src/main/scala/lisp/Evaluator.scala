@@ -135,9 +135,10 @@ class LispEvaluator(val currentEnvironment: Environment[Value])
   private val sExpressionEvaluator = SExpressionEvaluator(this, currentEnvironment, functionDefinitionTable)
   override def visit(node: Node): Either[String, Value] =
     node match
-      case n:VariableExpressionNode => variableExpressionEvaluator.evaluate(n)
+      case n: ValueExpressionNode => valueExpressionEvaluator.evaluate(n)
+      case n: VariableExpressionNode => variableExpressionEvaluator.evaluate(n)
       case n: IfExpressionNode => ifExpressionEvaluator.evaluate(n)
-      case n:WhileExpressionNode => whileExpressionEvaluator.evaluate(n)
+      case n: WhileExpressionNode => whileExpressionEvaluator.evaluate(n)
       case n: SetExpressionNode => setExpressionEvaluator.evaluate(n)
       case n: BeginExpressionNode => beginExpressionEvaluator.evaluate(n)
       case n: OperationExpressionNode => operationExpressionEvaluator.evaluate(n)

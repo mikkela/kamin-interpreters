@@ -133,7 +133,7 @@ class FunctionCallExpressionEvaluator[TValue <: Value](val evaluator: Evaluator[
                       Left(s"${f.operation}: invalid number of arguments")
               case f: ClosureValue =>
                 if f.arguments.length == parameters.length then
-                  val env = EnvironmentFrame[TValue](environment)
+                  val env = EnvironmentFrame[TValue](f.environment.asInstanceOf[Environment[TValue]])
                   f.arguments.zip(parameters).foreach((k, v) => env.set(k, v))
                   evaluatorProducer(env).visit(f.body)
                 else
@@ -183,6 +183,8 @@ class SExpressionEvaluator(
     node.value match 
       case v: IntegerValue => Right(v)
       case v: SymbolValue => Right(v)
+      case v: PrimitiveOperationValue => Right(v)
+      case v: ClosureValue => Right(v)
       case e: Seq[SExpressionNode] =>
         val evaluated = evaluateElements(e)
         evaluated match

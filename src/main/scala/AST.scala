@@ -9,14 +9,12 @@ extension [T](node: Node) def visit(using v: NodeVisitor[T]): T = v.visit(node)
 
 trait ExpressionNode extends Node
 
-case class ValueExpressionNode(value: IntegerValue | MatrixValue | SExpressionNode | ClosureValue | PrimitiveOperationValue) extends ExpressionNode
-case class SExpressionNode(value: IntegerValue | SymbolValue | Seq[SExpressionNode]) extends ExpressionNode:
+case class ValueExpressionNode(value: IntegerValue | MatrixValue | ClosureValue | PrimitiveOperationValue ) extends ExpressionNode
+case class SExpressionNode(value: IntegerValue | SymbolValue | Seq[SExpressionNode] ) extends ExpressionNode:
   override def toString: String =
     value match {
       case v: IntegerValue => v.toString
       case v: SymbolValue => v.toString
-      case v: ClosureValue => v.toString
-      case v: PrimitiveOperationValue => v.toString
       case v: Seq[SExpressionNode] => "(" + v.mkString(" ") + ")"
     }
 

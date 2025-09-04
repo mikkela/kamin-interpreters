@@ -256,7 +256,10 @@ class LambdaExpressionParser(val expressionParser: ExpressionParser)
           Seq.empty[String],
           arguments =>
             expressionParser.parse(tokens).flatMap {
-              expression => Success(LambdaExpressionNode(arguments, expression))
+              body =>
+                matchToken[RightParenthesisToken](tokens) match
+                  case Some(_) => Success(LambdaExpressionNode(arguments, body))
+                  case None => handleUnmatchedToken(tokens.headOption, acceptUnfinished = true)
             }
         )
 
@@ -267,5 +270,7 @@ class FunctionCallExpressionParser(val expressionParser: ExpressionParser)
   override def parse(tokens: LookaheadIterator[Token]): ParserResult[FunctionCallExpressionNode] =
     expressionParser.parse(tokens).flatMap {
       function =>
-        parseList(tokens, Seq.empty[ExpressionNode], exprs => Success(FunctionCallExpressionNode(function, exprs)), expressionParser)
+        parseList(tokens, Seq.empty[ExpressionNode],
+          exprs => Success(FunctionCallExpressionNode(function, exprs)),
+          expressionParser)
     }

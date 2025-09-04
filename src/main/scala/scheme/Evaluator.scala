@@ -159,6 +159,7 @@ class SchemeEvaluator(val currentEnvironment: Environment[Value])
       case n: BeginExpressionNode => beginExpressionEvaluator.evaluate(n)
       case n: FunctionCallExpressionNode => functionCallExpressionEvaluator.evaluate(n)
       case n: SExpressionNode => sExpressionEvaluator.evaluate(n)
+      case n:LambdaExpressionNode => lambdaExpressionEvaluator.evaluate(n)
 
 object SchemeEvaluator:
   val globalEnvironment: Environment[Value] = GlobalEnvironment[Value]()

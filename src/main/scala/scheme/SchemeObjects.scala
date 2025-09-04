@@ -10,7 +10,8 @@ object schemePrinter extends Printer:
   private val beginExpressionPrinter = BeginExpressionPrinter(this)
   private val functionCallExpressionPrinter = FunctionCallExpressionPrinter(this)
   private val sExpressionPrinter = SExpressionPrinter(this)
-  
+  private val lambdaExpressionPrinter = LambdaExpressionPrinter(this)
+
   override def visit(node: Node): String =
     val result = StringBuilder()
     node match
@@ -31,6 +32,9 @@ object schemePrinter extends Printer:
       case n:SExpressionNode =>
         result.append("'")
         sExpressionPrinter.printNodeTo(n, result)
+      case n:LambdaExpressionNode =>
+        lambdaExpressionPrinter.printNodeTo(n, result)
+
     result.toString()
 
 object schemeInterpreter extends Interpreter:

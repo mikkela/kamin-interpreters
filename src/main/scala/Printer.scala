@@ -14,10 +14,20 @@ class ValueExpressionPrinter(val printer: Printer) extends NodePrinter[ValueExpr
   override def printNodeTo(node: ValueExpressionNode, stringBuilder: StringBuilder): Unit =
     node.value match
       case v:IntegerValue => stringBuilder.append(v.value)
-      case e:SExpressionNode => printer.visit(e)
       case v:MatrixValue => stringBuilder.append("'(" + v.value.mkString(" ") + ")")
-      case v: PrimitiveOperationValue => stringBuilder.append(v.operation)
-      
+      case v:PrimitiveOperationValue => stringBuilder.append(v.operation)
+      case v: ClosureValue =>
+        stringBuilder.append("(lambda (")
+        var writtenFirst = false
+        v.arguments.foreach(
+          e =>
+            if writtenFirst then stringBuilder.append(" ")
+            stringBuilder.append(e)
+            writtenFirst = true
+        )
+        stringBuilder.append(") ")
+        stringBuilder.append(printer.visit(v.body))
+        stringBuilder.append(")")
       
 class VariableExpressionPrinter extends NodePrinter[VariableExpressionNode]:
   override def printNodeTo(node: VariableExpressionNode, stringBuilder: StringBuilder): Unit =
@@ -60,6 +70,20 @@ class BeginExpressionPrinter(val printer: Printer) extends NodePrinter[BeginExpr
     )
     stringBuilder.append(")")
 
+class LambdaExpressionPrinter(val printer: Printer) extends NodePrinter[LambdaExpressionNode]:
+  override def printNodeTo(node: LambdaExpressionNode, stringBuilder: StringBuilder): Unit =
+    stringBuilder.append("(lambda (")
+    var writtenFirst = false
+    node.arguments.foreach(
+      e =>
+        if writtenFirst then stringBuilder.append(" ")
+        stringBuilder.append(e)
+        writtenFirst = true
+    )
+    stringBuilder.append(") ")
+    stringBuilder.append(printer.visit(node.expression))
+    stringBuilder.append(")")
+    
 class FunctionCallExpressionPrinter(val printer: Printer) extends NodePrinter[FunctionCallExpressionNode]:
   override def printNodeTo(node: FunctionCallExpressionNode, stringBuilder: StringBuilder): Unit =
     stringBuilder.append("(")

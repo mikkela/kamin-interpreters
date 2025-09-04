@@ -15,6 +15,8 @@ object lispPrinter extends Printer:
   override def visit(node: Node): String =
     val result = StringBuilder()
     node match
+      case n:ValueExpressionNode =>
+        valueExpressionPrinter.printNodeTo(n, result)
       case n:VariableExpressionNode =>
         variableExpressionPrinter.printNodeTo(n, result)
       case n:IfExpressionNode =>

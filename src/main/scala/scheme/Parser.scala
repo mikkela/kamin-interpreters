@@ -15,7 +15,8 @@ object expressionParser extends ExpressionParser:
   private val functionCallExpressionParser = FunctionCallExpressionParser(this)
   override def parse(tokens: LookaheadIterator[Token]): ParserResult[ExpressionNode] =
     matchToken[IntegerToken, OperatorToken, NameToken, QuoteToken, LeftParenthesisToken](tokens) match
-      case Some(t: IntegerToken) => Success(ValueExpressionNode(t.lexeme.toInt.toIntegerValue))
+      case Some(t: IntegerToken) =>
+        Success(ValueExpressionNode(t.lexeme.toInt.toIntegerValue))
       case Some(t: OperatorToken) => Success(ValueExpressionNode(PrimitiveOperationValue(t.lexeme)))
       case Some(t: NameToken) => Success(VariableExpressionNode(t.lexeme))
       case Some(_: QuoteToken) => sExpressionParser.parse(tokens)
@@ -25,6 +26,8 @@ object expressionParser extends ExpressionParser:
           case Some(_: WhileToken) => whileExpressionParser.parse(tokens)
           case Some(_: SetToken) => setExpressionParser.parse(tokens)
           case Some(_: BeginToken) => beginExpressionParser.parse(tokens)
-          case Some(t: LambdaToken) => lambdaExpressionParser.parse(tokens)
-          case None => functionCallExpressionParser.parse(tokens)
+          case Some(t: LambdaToken) => 
+            lambdaExpressionParser.parse(tokens)
+          case None => 
+            functionCallExpressionParser.parse(tokens)
       case None => handleUnmatchedToken(tokens.headOption, acceptUnfinished = true)
